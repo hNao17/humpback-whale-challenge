@@ -1,4 +1,5 @@
 import os
+import random
 
 import keras
 import numpy as np
@@ -7,7 +8,7 @@ from skimage.filters import gaussian
 
 class WhaleLMGenerator(keras.utils.Sequence):
     def __init__(self, root_dir, data, n_landmarks, batch_size=32, dim=(224,224), n_channels=1,
-             shuffle=True, transforms=None):
+             shuffle=True, transforms=[], is_test=False):
         self.root_dir = root_dir
         self.dim = dim
         self.batch_size = batch_size
@@ -17,6 +18,8 @@ class WhaleLMGenerator(keras.utils.Sequence):
         self.shuffle = shuffle
         self.im_names = [k for k in self.data]
         self.indexes = np.arange(len(self.data))
+        self.transforms = transforms
+        self.is_test = is_test
         self.on_epoch_end()
     
     def on_epoch_end(self):
@@ -30,18 +33,11 @@ class WhaleLMGenerator(keras.utils.Sequence):
         image = transform.resize(image, self.dim)
         return image[:, :, np.newaxis]
     
-    def __landmarks2mask(self, landmarks):
-        h, w = self.dim
-        k = len(landmarks)
-
-        mask = np.zeros((w, h, self.n_landmarks), dtype=np.float32)
-        
-        for i in range(k):
-            p = landmarks[i]
-            mask[int(p['y'] * w), int(p['x'] * h), i] = 1.
-            mask[:,:,i] = gaussian(image=mask[:,:,i], sigma=self.sigma)
-        
-        return mask
+    def __horiz_flip(self, X, lms):
+        if random.random() > 0.5:
+            X = np.flip(X, axis=1)
+            lms[:,1] = 1. - lms[:,1]
+        return X, lms
     
     def __data_generation(self, idxs):
         """Generates data containing batch_size 
@@ -55,6 +51,10 @@ class WhaleLMGenerator(keras.utils.Sequence):
             X[i,] = self.__read_image(im_name)
             k = len(self.data[im_name])
             lms = np.array([[p['x'], p['y']] for p in self.data[im_name]])
+            
+            if 'horizontal_flip' in self.transforms:
+                X, lms = __horiz_flip(X, lms)
+            
             Y[i, :k*2] = lms.flatten()
         
         return X, Y
