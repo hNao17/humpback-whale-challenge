@@ -36,7 +36,7 @@ The most frequent id in the training set is the "new_whale", with a total of 810
 ## Image Size Distribution
 1523 unique image resolutions / sizes appear in the training set. The top 10 most frequent sizes are shown below:
 
-
+![alt_text](/images/id_distribution.png?v=2)
 
 The most frequent size is (1050,600) with 1113 images. 
 
