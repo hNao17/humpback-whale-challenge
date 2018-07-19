@@ -29,7 +29,7 @@ A coarse look at the distribution of images per whale id is as follows:
 
 Over 50% of whale ids only have 1 image, whereas just 1.6% of ids have 10 or more images. For the third bin, a more detailed distribution is shown in the bar graph below: 
 
-![alt_text](/images/id_distribution.png)
+![alt_text](/images/id_distribution.png?v=2)
 
 The most frequent id in the training set is the "new_whale", with a total of 810 images. The drop-off between new_whale and the second-most frequent id "w_1287fbc" is quite significant, with "w_1287fbc" only having 34 images.
 
