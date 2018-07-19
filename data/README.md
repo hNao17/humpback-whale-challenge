@@ -24,7 +24,7 @@ There are 4251 ids in the training set, with 4250 corresponding to unique 9-char
 
 A coarse look at the distribution of images per whale id is as follows: 
 - bin 1: N = 1 image: 2220
-- bin 2: 1 < N < 10 images: 2031
+- bin 2: 1 < N < 10 images: 1965
 - bin 3: N >= 10 images: 66
 
 Over 50% of whale ids only have 1 image, whereas just 1.6% of ids have 10 or more images. For the third bin, a more detailed distribution is shown in the bar graph below: 
@@ -34,7 +34,7 @@ Over 50% of whale ids only have 1 image, whereas just 1.6% of ids have 10 or mor
 The most frequent id in the training set is the "new_whale", with a total of 810 images. The drop-off between new_whale and the second-most frequent id "w_1287fbc" is quite significant, with "w_1287fbc" only having 34 images.
 
 ## Image Size Distribution
-1523 unique image resolutions / sizes appear in the training set. The top 10 most frequent sizes are shown below:
+2587 unique image resolutions / sizes appear in the training set. The top 10 most frequent sizes are shown below:
 
 ![alt_text](/images/img_size_distribution.png?v=2)
 
