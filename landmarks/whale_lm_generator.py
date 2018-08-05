@@ -1,14 +1,14 @@
 import os
-import random
+import math
 
 import keras
 import numpy as np
-from skimage import io, transform
+from skimage import io, transform, exposure
 from skimage.filters import gaussian
 
 class WhaleLMGenerator(keras.utils.Sequence):
     def __init__(self, root_dir, data, n_landmarks, batch_size=32, dim=(224,224), n_channels=1,
-             shuffle=True, transforms=[], is_test=False):
+             shuffle=True, transforms=[], is_test=False, seed=None):
         self.root_dir = root_dir
         self.dim = dim
         self.batch_size = batch_size
@@ -21,6 +21,9 @@ class WhaleLMGenerator(keras.utils.Sequence):
         self.transforms = transforms
         self.is_test = is_test
         self.on_epoch_end()
+        
+        if seed:
+            np.random.seed(seed)
     
     def on_epoch_end(self):
         'Updates indexes after each epoch'
@@ -29,14 +32,58 @@ class WhaleLMGenerator(keras.utils.Sequence):
     
     def __read_image(self, im_name):
         im_path = os.path.join(self.root_dir, im_name)
-        image = io.imread(im_path, as_grey=True)
-        image = transform.resize(image, self.dim)
-        return image[:, :, np.newaxis]
+        img = io.imread(im_path, as_grey=True)
+        img = transform.resize(img, self.dim)
+        
+        p2, p98 = np.percentile(img, (2, 98))
+        img = exposure.rescale_intensity(img, in_range=(p2, p98))
+        
+        return img[:, :, np.newaxis]
+    
+    def __rotate(self, X, lms):
+        d = np.random.uniform(-45, 45)
+        
+        h1, w1 = X.shape[:2]
+        X = transform.rotate(X, -d, resize=True, mode='edge')
+        h2, w2 = X.shape[:2]
+        
+        scale = (h2 / h1, w2 / w1)
+        
+        d = math.radians(d)
+        
+        R = np.array([[math.cos(d), -math.sin(d)], [math.sin(d), math.cos(d)]])
+        
+        lms = np.dot(lms - 0.5, R.T)
+        lms[:,0] /= scale[0]
+        lms[:,1] /= scale[1]
+        lms += 0.5
+        
+        X = transform.resize(X, self.dim)
+        
+        return X, lms
+    
+    def __rescale(self, X, lms):
+        scale_factor = np.random.uniform(0.5, 1.0)
+        
+        new_size = int(self.dim[0] / scale_factor)
+        X = np.pad(X[:,:,0], pad_width=(new_size-self.dim[0]) // 2, mode='constant', constant_values=1.)
+        X = transform.resize(X, self.dim)
+        X = X[:,:,np.newaxis]
+        
+        lms -= 0.5
+        lms *= scale_factor
+        lms += 0.5
+        
+        return X, lms
     
     def __horiz_flip(self, X, lms):
-        if random.random() > 0.5:
+        if np.random.rand() > 0.5:
             X = np.flip(X, axis=1)
-            lms[:,1] = 1. - lms[:,1]
+            lms[:,0] = 1. - lms[:,0]
+            tmp = np.copy(lms[0,:])
+            lms[0,:] = lms[2,:]
+            lms[2,:] = tmp
+
         return X, lms
     
     def __data_generation(self, idxs):
@@ -53,9 +100,13 @@ class WhaleLMGenerator(keras.utils.Sequence):
             lms = np.array([[p['x'], p['y']] for p in self.data[im_name]])
             
             if 'horizontal_flip' in self.transforms:
-                X, lms = __horiz_flip(X, lms)
+                X[i,], lms = self.__horiz_flip(X[i,], lms)
+            if 'rescale' in self.transforms:
+                X[i,], lms = self.__rescale(X[i,], lms)
+            if 'rotate' in self.transforms:
+                X[i,], lms = self.__rotate(X[i,], lms)
             
-            Y[i, :k*2] = lms.flatten()
+            Y[i,:k*2] = lms.flatten()
         
         return X, Y
     
