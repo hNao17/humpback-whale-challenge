@@ -31,4 +31,4 @@ Siamese Network:
 - optimizer: RMSProp
 
 ## Test Set Evaluation
-
+4250 similarity scores are generated from the whale id database for every test image. The scores are sorted in reverse order, from which the top5 scores are saved to the image. For the first score in the top5 that is below a minumum score threshold (i.e. 0.5), the score is replaced with the label "new_whale". 
